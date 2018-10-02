@@ -10,7 +10,7 @@ class TinderApi:
     LIKE_URL = '/like/'
     DISLIKE_URL = '/pass/'
     RECOMMENDATIONS_URL = '/user/recs'
-    RECOMMENDATIONS_V2_URL = '/v2/recs/core?locale=en-US'  # нужно ли locale en us
+    RECOMMENDATIONS_V2_URL = '/v2/recs/core?locale=en-US'
 
     ALL_MATCHES_URL = '/v2/matches'
     CHANGE_PREFERENCES_URL = '/profile'

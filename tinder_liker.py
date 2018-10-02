@@ -1,8 +1,10 @@
 from tinder_api import TinderApi
 from facebook_tools import FacebookTools
+from db import Connection
+from config import Config
 
 
-class TinderLiker:
+class TinderService:
     def __init__(self, fb_token=None, fb_id=None, tinder_token=None):
         if tinder_token:
             self._api = TinderApi(tinder_token=tinder_token)
@@ -10,27 +12,93 @@ class TinderLiker:
             self._facebook_data = FacebookTools(access_token=fb_token, fb_id=fb_id)
             self._api = TinderApi(self._facebook_data.access_token, self._facebook_data.facebook_id)
 
+        self._db = Connection(Config.DB_IP, Config.DB_PORT)
+
     @property
     def api(self):
         return self._api
 
-    def start(self):
-        recs = self.api.get_recommendations()
-        person_info = []
-        interest_keys = '_id', 'birth_date', 'name', 'photos', 'url', 'photos', 'instagram', 'connection_count', \
-                        'birth_date_info', 'teaser', 'distance_mi', 's_number'
-        # match_keys = '_id', 'created_date', 'last_activity_date'
-        for rec in recs['results']:
-            person_id = rec['_id']
-            person_info.append({key: rec[key] for key in interest_keys if key in rec})
-            result = self.api.like(person_id)
-            print(result)
-            # match_id = my_id + her_id
-            person_info[-1].update({'match_id': result.get('_id', None),
-                                    'match_created_date': result.get('created_date', None),
-                                    'match_last_activity_date': result.get('last_activity_date', None),
-                                    'participants': result.get('participants', None)
-                                    })
-            raise Exception(result['likes_remaining'])
+    @property
+    def storage(self):
+        return self._db
+
+    def like(self, limit=None):
+        person_keys = 'birth_date', 'name', 'photos', 'url', 'photos', 'instagram', 'connection_count', \
+                      'birth_date_info', 'teaser', 'distance_mi', 's_number'
+        match_keys = 'created_date', 'last_activity_date', 'participants'
+
+        likes_remaining = True
+        person_info, match_info = [], []
+
+        while likes_remaining:
+            recs = self.api.get_recommendations()
+
+            if not limit:
+                recs_part = recs['results']
+            elif limit > 0:
+                recs_part = recs['results'][:limit]
+            else:
+                likes_remaining = False
+                recs_part = []
+
+            for rec in recs_part:
+                if limit:
+                    limit -= 1
+
+                person_id = rec.get('_id', None)
+                if not person_id:
+                    continue
+
+                result = self.api.like(person_id)
+
+                if 'match' in result and 'likes_remaining' in result:
+                    match = result['match']
+                    likes_remaining_code = result['likes_remaining']
+                    if likes_remaining_code == 0:
+                        print('likes remaining: 0')
+                else:
+                    print(f'invalid tinder response {result}')
+                    continue
+
+                if likes_remaining_code != 0:
+                    current_person_info = {key: rec[key] for key in person_keys if key in rec}
+                    current_person_info.update(dict(owner_id=person_id))
+                    if current_person_info:
+                        person_info.append(current_person_info)
+
+                likes_remaining = True if likes_remaining_code != 0 and limit != 0 else False
+
+                if not match and not likes_remaining:
+                    break
+
+                if not match:
+                    continue
+
+                match_id = match.get('_id', None)
+                if not match_id:
+                    continue
+
+                match_info.append(dict(match_id=match_id))
+                match_info[-1].update({key: match[key] for key in match_keys if key in match})
+                owner_id = match['participants'][0]
+                match_info[-1].update(dict(owner_id=owner_id))
+
+                if not likes_remaining:
+                    break
+
+        uniq_person_info = []
+        for info in person_info:
+            if info not in uniq_person_info:
+                uniq_person_info.append(info)
+        uniq_match_info = []
+        for info in match_info:
+            if info not in uniq_match_info:
+                uniq_match_info.append(match_info)
+
+        self.storage.write_recommendations(person_info)
+        self.storage.write_matches(match_info)
+
+        return
 
 
+TinderService().like()
