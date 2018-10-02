@@ -101,4 +101,5 @@ class TinderService:
         return
 
 
-TinderService().like()
+if __name__ == '__main__':
+    TinderService().like()
