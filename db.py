@@ -23,4 +23,5 @@ class Connection:
         if matches:
             self.tinder_db.matches.insert_many(matches)
 
-
+    def __del__(self):
+        self.connection.close()
