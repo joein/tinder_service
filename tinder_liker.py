@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from tinder_api import TinderApi
 from facebook_tools import FacebookTools
 from db import Connection
@@ -32,6 +34,7 @@ class TinderService:
 
         while likes_remaining:
             recs = self.api.get_recommendations()
+            data_collection_date = datetime.utcnow()
 
             if not limit:
                 recs_part = recs['results']
@@ -55,16 +58,15 @@ class TinderService:
                     match = result['match']
                     likes_remaining_code = result['likes_remaining']
                     if likes_remaining_code == 0:
-                        print('likes remaining: 0')
+                        print('LIKES REMAINING: 0')
                 else:
                     print(f'invalid tinder response {result}')
                     continue
 
                 if likes_remaining_code != 0:
-                    current_person_info = {key: rec[key] for key in person_keys if key in rec}
-                    current_person_info.update(dict(owner_id=person_id))
-                    if current_person_info:
-                        person_info.append(current_person_info)
+                    current_person_info = dict(record_date=data_collection_date, owner_id=person_id)
+                    current_person_info.update({key: rec[key] for key in person_keys if key in rec})
+                    person_info.append(current_person_info)
 
                 likes_remaining = True if likes_remaining_code != 0 and limit != 0 else False
 
@@ -77,28 +79,35 @@ class TinderService:
                 match_id = match.get('_id', None)
                 if not match_id:
                     continue
-
-                match_info.append(dict(match_id=match_id))
-                match_info[-1].update({key: match[key] for key in match_keys if key in match})
+                print(f'MEETS---------: {person_id}')
+                print(f'MATCH---------: {match_id}')
                 owner_id = match['participants'][0]
-                match_info[-1].update(dict(owner_id=owner_id))
+                match_info.append(dict(match_id=match_id, record_date=data_collection_date, owner_id=owner_id))
+                match_info[-1].update({key: match[key] for key in match_keys if key in match})
 
                 if not likes_remaining:
                     break
 
-        uniq_person_info = []
-        for info in person_info:
-            if info not in uniq_person_info:
-                uniq_person_info.append(info)
-        uniq_match_info = []
-        for info in match_info:
-            if info not in uniq_match_info:
-                uniq_match_info.append(match_info)
+        uniq_person_info = self.get_uniq_records(person_info)
+        uniq_match_info = self.get_uniq_records(match_info)
 
-        self.storage.write_recommendations(person_info)
-        self.storage.write_matches(match_info)
+        print(f'MEETS: {len(uniq_person_info)}')
+        print(f'MATCHES: {len(uniq_match_info)}')
+        self.storage.write_recommendations(uniq_person_info)
+        self.storage.write_matches(uniq_match_info)
 
-        return
+    @staticmethod
+    def get_uniq_records(records):
+        uniq_records = []
+        records = iter(records)
+        while records:
+            try:
+                record = next(records)
+                if record not in uniq_records:
+                    uniq_records.append(record)
+            except StopIteration:
+                records = None
+        return uniq_records
 
 
 if __name__ == '__main__':
