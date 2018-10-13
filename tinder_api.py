@@ -83,30 +83,6 @@ class TinderApi:
         except requests.exceptions.RequestException as e:
             print("Something went wrong. Could not get that person:", e)
 
-    def send_msg(self, match_id, msg):
-        try:
-            url = Config.HOST + self.SEND_MSG_URL + match_id
-            r = requests.post(url, headers=self.headers,
-                              data=json.dumps({"message": msg}))
-            return r.json()
-        except requests.exceptions.RequestException as e:
-            print("Something went wrong. Could not send your message:", e)
-
-    def get_updates(self, last_activity_date=""):
-        '''
-        Returns all updates since the given activity date.
-        The last activity date is defaulted at the beginning of time.
-        Format for last_activity_date: "2017-07-09T10:28:13.392Z"
-        '''
-        try:
-            url = Config.HOST + self.UPDATES_URL
-            r = requests.post(url,
-                              headers=self.headers,
-                              data=json.dumps({"last_activity_date": last_activity_date}))
-            return r.json()
-        except requests.exceptions.RequestException as e:
-            print("Something went wrong with getting updates:", e)
-
     def get_self(self):
         '''
         Returns your own profile data
@@ -117,25 +93,6 @@ class TinderApi:
             return r.json()
         except requests.exceptions.RequestException as e:
             print("Something went wrong. Could not get your data:", e)
-
-    def change_preferences(self, **kwargs):
-        '''
-        ex: change_preferences(age_filter_min=30, gender=0)
-        kwargs: a dictionary - whose keys become separate keyword arguments and the values become values of these arguments
-        age_filter_min: 18..46
-        age_filter_max: 22..55
-        age_filter_min <= age_filter_max - 4
-        gender: 0 == seeking males, 1 == seeking females
-        distance_filter: 1..100
-        discoverable: true | false
-        {"photo_optimizer_enabled":false}
-        '''
-        try:
-            url = Config.HOST + self.CHANGE_PREFERENCES_URL
-            r = requests.post(url, headers=self.headers, data=json.dumps(kwargs))
-            return r.json()
-        except requests.exceptions.RequestException as e:
-            print("Something went wrong. Could not change your preferences:", e)
 
     def get_meta(self):
         '''
@@ -151,26 +108,6 @@ class TinderApi:
         except requests.exceptions.RequestException as e:
             print("Something went wrong. Could not get your metadata:", e)
 
-    def update_location(self, lat, lon):
-        '''
-        Updates your location to the given float inputs
-        Note: Requires a passport / Tinder Plus
-        '''
-        try:
-            url = Config.HOST + self.UPDATE_LOCATION_URL
-            r = requests.post(url, headers=self.headers, data=json.dumps({"lat": lat, "lon": lon}))
-            return r.json()
-        except requests.exceptions.RequestException as e:
-            print("Something went wrong. Could not update your location:", e)
-
-    def reset_real_location(self):
-        try:
-            url = Config.HOST + self.RESET_REAL_LOCATION_URL
-            r = requests.post(url, headers=self.headers)
-            return r.json()
-        except requests.exceptions.RequestException as e:
-            print("Something went wrong. Could not update your location:", e)
-
     def get_recs_v2(self):
         '''
         This works more consistently then the normal get_recommendations becuase it seeems to check new location
@@ -181,29 +118,6 @@ class TinderApi:
             return r.json()
         except Exception as e:
             print('excepted')
-
-    def set_web_profile_username(self, username):
-        '''
-        Sets the username for the webprofile: https://www.gotinder.com/@YOURUSERNAME
-        '''
-        try:
-            url = Config.HOST + self.SET_WEB_PROFILE_USERNAME_URL + username
-            r = requests.put(url, headers=self.headers,
-                             data=json.dumps({"username": username}))
-            return r.json()
-        except requests.exceptions.RequestException as e:
-            print("Something went wrong. Could not set webprofile username:", e)
-
-    def reset_web_profile_username(self, username):
-        '''
-        Resets the username for the webprofile
-        '''
-        try:
-            url = Config.HOST + self.RESET_WEB_PROFILE_USERNAME_URL + username
-            r = requests.delete(url, headers=self.headers)
-            return r.json()
-        except requests.exceptions.RequestException as e:
-            print("Something went wrong. Could not delete webprofile username:", e)
 
     def superlike(self, person_id):
         try:
@@ -231,32 +145,9 @@ class TinderApi:
         except requests.exceptions.RequestException as e:
             print("Something went wrong. Could not dislike:", e)
 
-    def report(self, person_id, cause, explanation=''):
-        '''
-        There are three options for cause:
-            0 : Other and requires an explanation
-            1 : Feels like spam and no explanation
-            4 : Inappropriate Photos and no explanation
-        '''
-        try:
-            url = Config.HOST + self.REPORT_URL + person_id
-            r = requests.post(url, headers=self.headers, data={
-                "cause": cause, "text": explanation})
-            return r.json()
-        except requests.exceptions.RequestException as e:
-            print("Something went wrong. Could not report:", e)
-
     def match_info(self, match_id):
         try:
             url = Config.HOST + self.MATCH_INFO_URL + match_id
-            r = requests.get(url, headers=self.headers)
-            return r.json()
-        except requests.exceptions.RequestException as e:
-            print("Something went wrong. Could not get your match info:", e)
-
-    def all_matches(self):
-        try:
-            url = Config.HOST + self.ALL_MATCHES_URL
             r = requests.get(url, headers=self.headers)
             return r.json()
         except requests.exceptions.RequestException as e:
@@ -268,25 +159,10 @@ class TinderApi:
             r = requests.get(url, headers=self.headers)
             count = r.headers['fast-match-count']
             # image is in the response but its in hex..
+            print(r.json())
             return count
         except requests.exceptions.RequestException as e:
             print("Something went wrong. Could not get your fast-match count:", e)
-
-    def trending_gifs(self, limit=3):
-        try:
-            url = Config.HOST + self.TRENDING_GIFS_URL + f'?limit={limit}'
-            r = requests.get(url, headers=self.headers)
-            return r.json()
-        except requests.exceptions.RequestException as e:
-            print("Something went wrong. Could not get the trending gifs:", e)
-
-    def gif_query(self, query, limit=3):
-        try:
-            url = Config.HOST + self.GIF_QUERY_URL + f'?limit={limit}&query={query}'
-            r = requests.get(url, headers=self.headers)
-            return r.json()
-        except requests.exceptions.RequestException as e:
-            print("Something went wrong. Could not get your gifs:", e)
 
     @staticmethod
     def check_response(response):

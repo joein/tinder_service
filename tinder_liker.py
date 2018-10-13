@@ -109,6 +109,10 @@ class TinderService:
                 records = None
         return uniq_records
 
+    def get_person(self, person_id):
+        self.api.get_person(person_id)
+
 
 if __name__ == '__main__':
-    TinderService().like()
+    service_instance = TinderService()
+    service_instance.like()
