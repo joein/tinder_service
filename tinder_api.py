@@ -12,23 +12,12 @@ class TinderApi:
     RECOMMENDATIONS_URL = '/user/recs'
     RECOMMENDATIONS_V2_URL = '/v2/recs/core?locale=en-US'
 
-    ALL_MATCHES_URL = '/v2/matches'
-    CHANGE_PREFERENCES_URL = '/profile'
     FAST_MATCH_INFO_URL = '/v2/fast-match/preview'
     META_URL = '/meta'
     PERSON_URL = '/user/'
     SELF_URL = '/profile'
-    UPDATES_URL = '/updates'
-    GIF_QUERY_URL = '/giphy/search'
     MATCH_INFO_URL = '/matches/'
-    REPORT_URL = '/report/'
-    RESET_REAL_LOCATION_URL = '/passport/user/reset'
-    RESET_WEB_PROFILE_USERNAME_URL = '/profile/'
-    SEND_MSG_URL = '/user/matches/'
-    SET_WEB_PROFILE_USERNAME_URL = '/profile/'
     SUPERLIKE_URL = LIKE_URL, '/super'
-    TRENDING_GIFS_URL = '/giphy/trending'
-    UPDATE_LOCATION_URL = '/passport/user/travel'
 
     def __init__(self, fb_access_token=None, fb_id=None, tinder_token=None):
         self.headers = {"content-type": "application/json"}
@@ -159,7 +148,6 @@ class TinderApi:
             r = requests.get(url, headers=self.headers)
             count = r.headers['fast-match-count']
             # image is in the response but its in hex..
-            print(r.json())
             return count
         except requests.exceptions.RequestException as e:
             print("Something went wrong. Could not get your fast-match count:", e)

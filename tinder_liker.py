@@ -1,9 +1,13 @@
+import logging
 from datetime import datetime
 
 from tinder_api import TinderApi
 from facebook_tools import FacebookTools
 from db import Connection
 from config import Config
+
+
+logging.basicConfig(format=u'%(filename)s # %(levelname)s # [%(asctime)s]  %(message)s', level=logging.INFO)
 
 
 class TinderService:
@@ -58,9 +62,9 @@ class TinderService:
                     match = result['match']
                     likes_remaining_code = result['likes_remaining']
                     if likes_remaining_code == 0:
-                        print('LIKES REMAINING: 0')
+                        logging.info('LIKES REMAINING: 0')
                 else:
-                    print(f'invalid tinder response {result}')
+                    logging.info(f'invalid tinder response {result}')
                     continue
 
                 if likes_remaining_code != 0:
@@ -79,8 +83,8 @@ class TinderService:
                 match_id = match.get('_id', None)
                 if not match_id:
                     continue
-                print(f'MEETS---------: {person_id}')
-                print(f'MATCH---------: {match_id}')
+                logging.info(f'MEETS---------: {person_id}')
+                logging.info(f'MATCH---------: {match_id}')
                 owner_id = match['participants'][0]
                 match_info.append(dict(match_id=match_id, record_date=data_collection_date, owner_id=owner_id))
                 match_info[-1].update({key: match[key] for key in match_keys if key in match})
@@ -91,8 +95,8 @@ class TinderService:
         uniq_person_info = self.get_uniq_records(person_info)
         uniq_match_info = self.get_uniq_records(match_info)
 
-        print(f'MEETS: {len(uniq_person_info)}')
-        print(f'MATCHES: {len(uniq_match_info)}')
+        logging.info(f'MEETS: {len(uniq_person_info)}')
+        logging.info(f'MATCHES: {len(uniq_match_info)}')
         self.storage.write_recommendations(uniq_person_info)
         self.storage.write_matches(uniq_match_info)
 
